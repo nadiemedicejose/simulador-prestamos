@@ -2,15 +2,36 @@ var monto, plazo, tasaAnual, fecha, tasaMensual, mensualidad, IVA = 0.16, intere
 
 var establecerDatos = function(){
     monto = document.getElementById('monto').value
+    periodo = document.getElementById('periodo').value
     plazo = document.getElementById('plazo').value
     tasaAnual = document.getElementById('interes').value
     fecha = new Date(document.getElementById('fecha').value)
 
-    /* no se han establecido rb para seleccionar el tipo de plazo
-    if(plazoMensual === true) {
+    var plazoMensual = document.getElementById('mensual').checked
+    var plazoAnual = document.getElementById('anual').checked
+
+    if (plazoMensual === true) {
         this.plazo = plazo
+    } else if (plazoAnual === true) {
+        this.plazo = plazo * 12;
     } else {
-        this.plazo = plazo
+        alert('No seleccionaste ningún tipo de plazo')
+    }
+
+    /* switch(periodo) {
+        case 'semanal':
+            var fechafin = new Date(setDate((fecha.getDate() + plazo))
+            plazo = plazo * 5
+            break
+        case 'quincenal':
+            plazo = plazo * 2
+            break
+        case 'mensual':
+            plazo = plazo
+            break
+        defualt:
+        alert('No seleccionaste ningún periodo de pagos')
+        break
     } */
 }
 
@@ -124,7 +145,19 @@ function simularPrestamo() {
                     texto = (i+1)
                     break
                 case 'Fecha':
-                    texto = fecha.getDate() + '/' + fecha.getMonth() + '/' + fecha.getFullYear()
+                    if(periodo === 'semanal') {
+                        fecha.setDate(fecha.getDate()+7)
+
+                        texto = (fecha.getDate()+1) + '/' + (fecha.getMonth()+1) + '/' + fecha.getFullYear()
+                    } else if (periodo === 'quincenal') {
+                        fecha.setDate(fecha.getDate()+15)
+
+                        texto = (fecha.getDate()+1) + '/' + (fecha.getMonth()+1) + '/' + fecha.getFullYear()
+                    } else if(periodo === 'mensual') {
+                        fecha.setMonth(fecha.getMonth()+1)
+
+                        texto = (fecha.getDate()+1) + '/' + (fecha.getMonth()+1) + '/' + fecha.getFullYear()
+                    }
                     break
                 case 'Mensualidad':
                     texto = '$' + mensualidad.toFixed(2)
