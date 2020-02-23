@@ -1,14 +1,17 @@
-var monto, plazo, tasaAnual, fecha, tasaMensual, mensualidad, IVA = 0.16, intereses, impuestos, capital, insoluto,primerInteres = 0, primerImpuesto = 0, primerCapital = 0, primerInsoluto = 0
+var acumIntereses = 0, acumImpuestos = 0, acumCapital = 0
+var monto, plazo, totalPagos, tasaAnual, fechaInicio, fechaPago, tasaMensual, mensualidad, intereses, impuestos, capital, insoluto,primerInteres = 0, primerImpuesto = 0, primerCapital = 0, primerInsoluto = 0
+const IVA = 0.16
 
 var establecerDatos = function(){
     monto = document.getElementById('monto').value
     periodo = document.getElementById('periodo').value
     plazo = document.getElementById('plazo').value
     tasaAnual = document.getElementById('interes').value
-    fecha = new Date(document.getElementById('fecha').value)
+    fechaInicio = new Date(document.getElementById('fecha').value)
+    fechaPago = new Date(fechaInicio)
 
-    var plazoMensual = document.getElementById('mensual').checked
-    var plazoAnual = document.getElementById('anual').checked
+    let plazoMensual = document.getElementById('mensual').checked
+    let plazoAnual = document.getElementById('anual').checked
 
     if (plazoMensual === true) {
         this.plazo = plazo
@@ -18,21 +21,24 @@ var establecerDatos = function(){
         alert('No seleccionaste ningún tipo de plazo')
     }
 
-    /* switch(periodo) {
+    switch(periodo) {
         case 'semanal':
-            var fechafin = new Date(setDate((fecha.getDate() + plazo))
-            plazo = plazo * 5
+            let fechaFin = new Date(fechaInicio)
+            fechaFin.setMonth(plazo)
+            let tiempo = fechaFin.getTime() - fechaInicio.getTime()
+            let dias = Math.floor(tiempo / (1000 * 60 * 60 * 24))
+            totalPagos = Math.ceil(dias / 7)
             break
         case 'quincenal':
-            plazo = plazo * 2
+            totalPagos = plazo * 2
             break
         case 'mensual':
-            plazo = plazo
+            totalPagos = plazo
             break
-        defualt:
-        alert('No seleccionaste ningún periodo de pagos')
-        break
-    } */
+        default:
+            alert('No seleccionaste ningún periodo de pagos')
+            break
+    }
 }
 
 function calcularTasaMensual(){
@@ -45,14 +51,14 @@ function tasaMensualconIVA(){
 }
 
 function PagoMensual() {
-    var denominador = Math.pow((1 + tasaMensualconIVA()), plazo) - 1
+    let denominador = Math.pow((1 + tasaMensualconIVA()), totalPagos) - 1
     mensualidad = (tasaMensualconIVA() + (tasaMensualconIVA() / denominador)) * monto
     return mensualidad
 }
 
 function calcularTotalPrestamo() {
-    var totalPrestamo = 0;
-    for (let i = 0; i < plazo; i++) {
+    let totalPrestamo = 0;
+    for (let i = 0; i < totalPagos; i++) {
         totalPrestamo += mensualidad
     }
     return totalPrestamo
@@ -67,7 +73,7 @@ function obtenerTotalPrestamo() {
 }
 
 function Intereses() {
-    if (primerInteres == 0) {
+    if (primerInteres === 0) {
         intereses = tasaMensual * monto
         primerInteres = intereses
     } else {
@@ -77,7 +83,7 @@ function Intereses() {
 }
 
 function Impuestos() {
-    if (primerImpuesto == 0) {
+    if (primerImpuesto === 0) {
         impuestos = primerInteres * IVA
         primerImpuesto = impuestos
     } else {
@@ -87,7 +93,7 @@ function Impuestos() {
 }
 
 function Capital() {
-    if (primerCapital == 0) {
+    if (primerCapital === 0) {
         capital = mensualidad - primerInteres - primerImpuesto
         primerCapital = capital
     } else {
@@ -97,7 +103,7 @@ function Capital() {
 }
 
 function SaldoInsoluto() {
-    if (primerInsoluto == 0) {
+    if (primerInsoluto === 0) {
         insoluto = monto - primerCapital
         primerInsoluto = insoluto
     } else {
@@ -111,8 +117,6 @@ function simularPrestamo() {
     PagoMensual()
     calcularTotalPrestamo()
 
-    var acumIntereses = 0, acumImpuestos = 0, acumCapital = 0
-
     var miArreglo = ['No.', 'Fecha', 'Mensualidad', 'Intereses', 'Impuestos', 'Capital', 'Insoluto']
 
     var tablaAmortizaciones = document.getElementById('amortizaciones')
@@ -124,17 +128,20 @@ function simularPrestamo() {
 
     // este for, lo utilizo para el header de la tabla
     for (let j = 0; j < miArreglo.length; j++) {
-        var celda = document.createElement("td")
-        var texto = miArreglo[j]
-        var textoCelda = document.createTextNode(texto)
+        let celda = document.createElement("td")
+        let texto = miArreglo[j]
+        let textoCelda = document.createTextNode(texto)
         celda.appendChild(textoCelda)
         fila.appendChild(celda)
     }
     cabeceraTabla.appendChild(fila)
 
     // este for, lo utilizo para el cuerpo de la tabla
-    for (let i = 0; i < plazo; i++) {
-        var intereses = Intereses(), impuestos = Impuestos(), capital = Capital(), insoluto = SaldoInsoluto()
+    for (let i = 0; i < totalPagos; i++) {
+        let intereses = Intereses(), impuestos = Impuestos(), capital = Capital(), insoluto = SaldoInsoluto()
+        acumIntereses = acumIntereses + intereses
+        acumImpuestos = acumImpuestos + impuestos
+        acumCapital = acumCapital + capital
         
         var fila = document.createElement("tr")
         for (let j = 0; j < miArreglo.length; j++) {
@@ -146,18 +153,13 @@ function simularPrestamo() {
                     break
                 case 'Fecha':
                     if(periodo === 'semanal') {
-                        fecha.setDate(fecha.getDate()+7)
-
-                        texto = (fecha.getDate()+1) + '/' + (fecha.getMonth()+1) + '/' + fecha.getFullYear()
+                        fechaPago.setDate(fechaPago.getDate()+7)
                     } else if (periodo === 'quincenal') {
-                        fecha.setDate(fecha.getDate()+15)
-
-                        texto = (fecha.getDate()+1) + '/' + (fecha.getMonth()+1) + '/' + fecha.getFullYear()
+                        fechaPago.setDate(fechaPago.getDate()+15)
                     } else if(periodo === 'mensual') {
-                        fecha.setMonth(fecha.getMonth()+1)
-
-                        texto = (fecha.getDate()+1) + '/' + (fecha.getMonth()+1) + '/' + fecha.getFullYear()
+                        fechaPago.setMonth(fechaPago.getMonth()+1)
                     }
+                    texto = fechaPago.toLocaleDateString()
                     break
                 case 'Mensualidad':
                     texto = '$' + mensualidad.toFixed(2)
@@ -185,20 +187,35 @@ function simularPrestamo() {
         cuerpoTabla.appendChild(fila)
     }
 
+    /* // este for, lo utilizo para el footer de la tabla
+    for (let j = 0; j < miArreglo.length; j++) {
+        let celda = document.createElement("td")
+        let texto
+        switch(miArreglo[j]) {
+            case 'No.':
+                texto = totalPagos
+                break
+            case 'Intereses':
+                texto = '$' + acumIntereses.toFixed(2)
+                break
+            case 'Impuestos':
+                texto = '$' + acumImpuestos.toFixed(2)
+                break
+            case 'Capital':
+                texto = '$' + acumCapital.toFixed(2)
+                break
+            default:
+                texto = null
+                break
+        }
+        let textoCelda = document.createTextNode(texto)
+        celda.appendChild(textoCelda)
+        fila.appendChild(celda)
+    }
+    pieTabla.appendChild(fila) */
+
     tabla.appendChild(cabeceraTabla)
     tabla.appendChild(cuerpoTabla)
     //tabla.appendChild(pieTabla)
     tablaAmortizaciones.appendChild(tabla)
-
-    /*       
-        for (let i = 0; i < plazo; i++)
-        {
-        acumIntereses += intereses;
-        acumImpuestos += impuestos;
-        acumCapital += capital;
-        }
-        amortizaciones += "Intereses: $" + Math.Round(acumIntereses, 2)
-        amortizaciones += "Impuestos: $" + Math.Round(acumImpuestos, 2)
-        amortizaciones += "Capital: $" + Math.Round(acumCapital, 2)
-    */
 }
