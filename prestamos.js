@@ -1,14 +1,23 @@
-var acumIntereses = 0, acumImpuestos = 0, acumCapital = 0
-var monto, plazo, totalPagos, tasaAnual, fechaInicio, fechaPago, tasaMensual, mensualidad, intereses, impuestos, capital, insoluto,primerInteres = 0, primerImpuesto = 0, primerCapital = 0, primerInsoluto = 0
 const IVA = 0.16
+var monto, plazo, totalPagos, tasaAnual, fechaInicio, fechaPago, tasaMensual, mensualidad, intereses, impuestos, capital, insoluto
+let primerInteres, primerImpuesto, primerCapital, primerInsoluto, primerFechaPago
+let acumIntereses, acumImpuestos, acumCapital
+
+const dinero = new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  })
 
 var establecerDatos = function(){
+    primerInteres = 0, primerImpuesto = 0, primerCapital = 0, primerInsoluto = 0, primerFechaPago = true
+    acumIntereses = 0, acumImpuestos = 0, acumCapital = 0
+
     monto = document.getElementById('monto').value
     periodo = document.getElementById('periodo').value
     plazo = document.getElementById('plazo').value
     tasaAnual = document.getElementById('interes').value
     fechaInicio = new Date(document.getElementById('fecha').value)
-    fechaPago = new Date(fechaInicio)
+    fechaInicio.setDate(fechaInicio.getDate()+1) // fecha actual
 
     let plazoMensual = document.getElementById('mensual').checked
     let plazoAnual = document.getElementById('anual').checked
@@ -16,7 +25,7 @@ var establecerDatos = function(){
     if (plazoMensual === true) {
         this.plazo = plazo
     } else if (plazoAnual === true) {
-        this.plazo = plazo * 12;
+        this.plazo = plazo * 12
     } else {
         alert('No seleccionaste ningún tipo de plazo')
     }
@@ -24,7 +33,7 @@ var establecerDatos = function(){
     switch(periodo) {
         case 'semanal':
             let fechaFin = new Date(fechaInicio)
-            fechaFin.setMonth(plazo)
+            fechaFin.setMonth(fechaFin.getMonth() + parseInt(plazo))
             let tiempo = fechaFin.getTime() - fechaInicio.getTime()
             let dias = Math.floor(tiempo / (1000 * 60 * 60 * 24))
             totalPagos = Math.ceil(dias / 7)
@@ -47,7 +56,7 @@ function calcularTasaMensual(){
 }
 
 function tasaMensualconIVA(){
-    return (calcularTasaMensual() + (calcularTasaMensual() * IVA));
+    return (calcularTasaMensual() + (calcularTasaMensual() * IVA))
 }
 
 function PagoMensual() {
@@ -57,8 +66,8 @@ function PagoMensual() {
 }
 
 function calcularTotalPrestamo() {
-    let totalPrestamo = 0;
-    for (let i = 0; i < totalPagos; i++) {
+    let totalPrestamo = 0
+    for (let i = 0; i < totalPagos; i++){
         totalPrestamo += mensualidad
     }
     return totalPrestamo
@@ -117,64 +126,70 @@ function simularPrestamo() {
     PagoMensual()
     calcularTotalPrestamo()
 
-    var miArreglo = ['No.', 'Fecha', 'Mensualidad', 'Intereses', 'Impuestos', 'Capital', 'Insoluto']
+    var columnas = ['No.', 'Fecha', 'Mensualidad', 'Intereses', 'Impuestos', 'Capital', 'Insoluto']
 
-    var tablaAmortizaciones = document.getElementById('amortizaciones')
+    var amortizaciones = document.getElementById('amortizaciones')
     var tabla = document.createElement('table')
     var cabeceraTabla = document.createElement('thead')
     var cuerpoTabla = document.createElement('tbody')
     var pieTabla = document.createElement('tfoot')
-    var fila = document.createElement("tr")
+    var fila = document.createElement('tr')
 
-    // este for, lo utilizo para el header de la tabla
-    for (let j = 0; j < miArreglo.length; j++) {
-        let celda = document.createElement("td")
-        let texto = miArreglo[j]
+    // header de mi tabla
+    for (let j = 0; j < columnas.length; j++){
+        let celda = document.createElement('td')
+        let texto = columnas[j]
         let textoCelda = document.createTextNode(texto)
         celda.appendChild(textoCelda)
         fila.appendChild(celda)
     }
     cabeceraTabla.appendChild(fila)
 
-    // este for, lo utilizo para el cuerpo de la tabla
+    // cuerpo de mi tabla
     for (let i = 0; i < totalPagos; i++) {
         let intereses = Intereses(), impuestos = Impuestos(), capital = Capital(), insoluto = SaldoInsoluto()
-        acumIntereses = acumIntereses + intereses
-        acumImpuestos = acumImpuestos + impuestos
-        acumCapital = acumCapital + capital
-        
-        var fila = document.createElement("tr")
-        for (let j = 0; j < miArreglo.length; j++) {
-            var celda = document.createElement("td")
-            var texto // el texto a mostrar en la celda
-            switch(miArreglo[j]) {
+        acumIntereses += intereses
+        acumImpuestos += impuestos
+        acumCapital += capital
+
+        var fila = document.createElement('tr')
+        for(let j = 0; j < columnas.length; j++){
+            let celda = document.createElement('td')
+            let texto
+
+            switch(columnas[j]) {
                 case 'No.':
                     texto = (i+1)
                     break
                 case 'Fecha':
-                    if(periodo === 'semanal') {
-                        fechaPago.setDate(fechaPago.getDate()+7)
-                    } else if (periodo === 'quincenal') {
-                        fechaPago.setDate(fechaPago.getDate()+15)
-                    } else if(periodo === 'mensual') {
-                        fechaPago.setMonth(fechaPago.getMonth()+1)
+                    if (primerFechaPago === true) {
+                        fechaPago = new Date(fechaInicio)
+                        primerFechaPago = false
+                    } else {
+                        if(periodo === 'semanal') {
+                            fechaPago.setDate(fechaPago.getDate()+7)
+                        } else if (periodo === 'quincenal') {
+                            fechaPago.setDate(fechaPago.getDate()+15)
+                        } else if (periodo === 'mensual') {
+                            fechaPago.setMonth(fechaPago.getMonth()+1)
+                        }
                     }
                     texto = fechaPago.toLocaleDateString()
                     break
                 case 'Mensualidad':
-                    texto = '$' + mensualidad.toFixed(2)
+                    texto = dinero.format(mensualidad)
                     break
                 case 'Intereses':
-                    texto = '$' + intereses.toFixed(2)
+                    texto = dinero.format(intereses)
                     break
                 case 'Impuestos':
-                    texto = '$' + impuestos.toFixed(2)
+                    texto = dinero.format(impuestos)
                     break
                 case 'Capital':
-                    texto = '$' + capital.toFixed(2)
+                    texto = dinero.format(capital)
                     break
                 case 'Insoluto':
-                    texto = '$' + Math.abs(insoluto.toFixed(2))
+                    texto = dinero.format(Math.abs(insoluto))
                     break
                 default:
                     texto = null
@@ -187,35 +202,34 @@ function simularPrestamo() {
         cuerpoTabla.appendChild(fila)
     }
 
-    /* // este for, lo utilizo para el footer de la tabla
-    for (let j = 0; j < miArreglo.length; j++) {
+    // footer de la tabla
+    for (let j = 0; j < columnas.length; j++) {
         let celda = document.createElement("td")
         let texto
-        switch(miArreglo[j]) {
+        switch(columnas[j]) {
             case 'No.':
                 texto = totalPagos
                 break
             case 'Intereses':
-                texto = '$' + acumIntereses.toFixed(2)
+                texto = dinero.format(acumIntereses)
                 break
             case 'Impuestos':
-                texto = '$' + acumImpuestos.toFixed(2)
+                texto = dinero.format(acumImpuestos)
                 break
             case 'Capital':
-                texto = '$' + acumCapital.toFixed(2)
+                texto = dinero.format(acumCapital)
                 break
             default:
-                texto = null
+                texto = ''
                 break
         }
         let textoCelda = document.createTextNode(texto)
         celda.appendChild(textoCelda)
-        fila.appendChild(celda)
+        pieTabla.appendChild(celda)
     }
-    pieTabla.appendChild(fila) */
 
     tabla.appendChild(cabeceraTabla)
     tabla.appendChild(cuerpoTabla)
-    //tabla.appendChild(pieTabla)
-    tablaAmortizaciones.appendChild(tabla)
+    tabla.appendChild(pieTabla)
+    amortizaciones.appendChild(tabla)
 }
